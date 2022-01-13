@@ -28,20 +28,32 @@
 #include "../../module/servo.h"
 
 /**
- * M280: Get or set servo position. P<index> [S<angle>]
+ * M280: Get or set servo position. P<index> [S<angle>] [T<delay>]
  */
 void GcodeSuite::M280() {
-
   if (!parser.seen('P')) return;
 
   const int servo_index = parser.value_int();
   if (WITHIN(servo_index, 0, NUM_SERVOS - 1)) {
     if (parser.seen('S')) {
-      const int a = parser.value_int();
-      if (a == -1)
+      const int anew = parser.value_int();
+      if (anew >= 0) {
+        #if ENABLED(POLARGRAPH)
+          if (parser.seen('T')) { // (ms) Total duration of servo move
+            const int16_t t = constrain(parser.value_int(), 0, 10000);
+            const int aold = servo[servo_index].read();
+            millis_t now = millis();
+            const millis_t start = now, end = start + t;
+            while (PENDING(now, end)) {
+              safe_delay(50);
+              now = _MIN(millis(), end);
+              MOVE_SERVO(servo_index, LROUND(aold + (anew - aold) * (float(now - start) / t)));
+            }
+          }
+        #endif // POLARGRAPH
+        MOVE_SERVO(servo_index, anew);
+      } else
         servo[servo_index].detach();
-      else
-        MOVE_SERVO(servo_index, a);
     }
     else
       SERIAL_ECHO_MSG(" Servo ", servo_index, ": ", servo[servo_index].read());
