@@ -28,7 +28,7 @@
 #include "../core/types.h"
 #include "../core/macros.h"
 
-#define DEFAULT_POLARGRAPH_MAX_BELT_LEN 1035.0
+#define DEFAULT_POLARGRAPH_MAX_BELT_LEN 1500.0
 
 extern float segments_per_second;
 
